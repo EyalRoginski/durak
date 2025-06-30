@@ -97,9 +97,7 @@ class ExampleBot(AbstractBot):
         options: List[Card] = self.optional_attack_options(self.get_hand())
         options.append([])
         best_option: List[Card] = max(
-            options,
-            key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))),
-            default=[],
+            options, key=lambda x: list(set(self.get_hand()) - set(x)), default=[]
         )
         if best_option:
             self.log(f"Joining attack with: {best_option}")
