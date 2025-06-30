@@ -91,10 +91,10 @@ class ExampleBot(AbstractBot):
                     options.append(card)
         return self.non_empty_subsets(options)
 
-    def optional_attack(self) -> List[Card]:
+    def optional_attack(self, cardlist: List[Card]) -> List[Card]:
         if self.get_table_attack()[-1] != None:
             return []  # full attack
-        options: List[Card] = self.optional_attack_options(self.get_hand())
+        options: List[Card] = self.optional_attack_options(cardlist)
         options.append([])
         best_option: List[Card] = max(
             options, key=lambda x: list(set(self.get_hand()) - set(x)), default=[]
@@ -155,8 +155,8 @@ class ExampleBot(AbstractBot):
             key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))),
             default=[],
         )
-        self.log(f"Attacking with: {best_option}")
-        return best_option
+        self.log(f"Attacking with: {winning_option}")
+        return winning_option
 
     def possible_forward(self) -> list[Card]:
         """

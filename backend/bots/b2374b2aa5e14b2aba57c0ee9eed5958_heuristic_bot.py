@@ -91,10 +91,10 @@ class ExampleBot(AbstractBot):
                     options.append(card)
         return self.non_empty_subsets(options)
 
-    def optional_attack(self) -> List[Card]:
+    def optional_attack(self, cardlist: List[Card]) -> List[Card]:
         if self.get_table_attack()[-1] != None:
             return []  # full attack
-        options: List[Card] = self.optional_attack_options(self.get_hand())
+        options: List[Card] = self.optional_attack_options(cardlist)
         options.append([])
         best_option: List[Card] = max(
             options, key=lambda x: list(set(self.get_hand()) - set(x)), default=[]
@@ -155,8 +155,8 @@ class ExampleBot(AbstractBot):
             key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))),
             default=[],
         )
-        self.log(f"Attacking with: {best_option}")
-        return best_option
+        self.log(f"Attacking with: {winning_option}")
+        return winning_option
 
     def possible_forward(self) -> list[Card]:
         """
@@ -201,14 +201,14 @@ class ExampleBot(AbstractBot):
         forward_score = (
             self.evaluate(list(set(self.get_hand()) - set(best_forward)))
             if best_forward
-            else -1000.0
+            else -100.0
         )
         self.log(f"Best forward: {best_forward}; score: {forward_score}")
 
         defence_score = (
             self.evaluate(list(set(self.get_hand()) - set(defence_list[0])))
             if defence_list[0]
-            else -1000.0
+            else -100.0
         )
         self.log(f"Defence: {defence_list}; score: {defence_score}")
 
@@ -242,9 +242,7 @@ class ExampleBot(AbstractBot):
                 continue
             flag: bool = False
             for card in self.sort_cards(hand):
-                if (
-                    card[0] > attacking_card[0] and card[1] == attacking_card[1]
-                ) or card[1] == self.get_kozar_suit():
+                if card[0] > attacking_card[0] and card[1] == attacking_card[1]:
                     defending_cards.append(card)
                     indexes.append(index)
                     hand.remove(card)
