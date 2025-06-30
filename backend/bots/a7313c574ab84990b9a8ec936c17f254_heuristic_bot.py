@@ -84,10 +84,10 @@ class ExampleBot(AbstractBot):
     def optional_attack_options(self, cardlist: List[Card]) -> List[Card]:
         options: List[Card] = []
         for card in cardlist:
-            for table_card in self.get_table_attack() + self.get_table_defence():
-                if not table_card:
+            for attacking_card in self.get_table_attack():
+                if not attacking_card:
                     continue
-                if table_card[0] == card[0]:
+                if attacking_card[0] == card[0]:
                     options.append(card)
         return self.non_empty_subsets(options)
 
