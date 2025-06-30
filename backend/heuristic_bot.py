@@ -192,7 +192,7 @@ class ExampleBot(AbstractBot):
         if cards_in_game < self.num_players - 1:
             return 1
         chances = 1
-        for index in range(1, self.num_players - 1):
+        for index in range(1, self.num_players):
             cur_player = (self.my_index + index) % self.num_players
             if (
                 len(
@@ -289,10 +289,28 @@ class ExampleBot(AbstractBot):
 
     def enemy_optional_attack(
         self, num_player: int, cards_on_table: set[Card], free_attack_slots: int
-    ) -> set[Card]:
-        attack_set = {}
+    ) -> List[Card]:
+        options: List[Card] = self.optional_attack_options_inn(
+            self.player_cards[num_player], cards_on_table
+        )
+        return self.pick_opt_attack(options, False, self.player_cards[num_player])
 
-        return attack_set
+    def stimulate_enemy_response(
+        self, cards_on_table: List[Card], free_attack_slots: int = 6
+    ):
+        attacks = set()
+        for index in range(1, self.num_players):
+            cur_player = (self.my_index + index) % self.num_players
+            player_attack = self.enemy_optional_attack(
+                cur_player, cards_on_table, free_attack_slots
+            )
+            if len(player_attack) > free_attack_slots:
+                player_attack = player_attack[:free_attack_slots]
+            attacks += set(player_attack)
+            free_attack_slots -= len(player_attack)
+            if free_attack_slots == 0:
+                break
+        return attacks
 
     def defend_with_cards(
         self, hand: list[Card]
