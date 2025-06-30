@@ -19,7 +19,7 @@ class ExampleBot(AbstractBot):
         ordered_suits[3] = self.get_kozar_suit()
         # ordering the cards in an increasing order (one of a few possible orders).
         self.card_order = [(i, suit) for suit in ordered_suits for i in range(13)]
-
+        self.log(str(self.card_order))
 
     def optional_attack(self):
         for card in self.get_hand():
@@ -29,7 +29,6 @@ class ExampleBot(AbstractBot):
                     return [card]
         self.log("Passing on joining attack.")
         return []
-
 
     def separate_kozars(self):
         """
@@ -47,6 +46,7 @@ class ExampleBot(AbstractBot):
         if not attack_from:
             attack_from = kozars
         sorted_cards = sorted(attack_from)
+        self.log(str(sorted_cards))
         attacking_card_num = sorted_cards[0][0]
         return [card for card in sorted_cards if card[0] == attacking_card_num]
 
