@@ -40,15 +40,18 @@ class ExampleBot(AbstractBot):
         return card[0] + (15.0 if card[1] == self.get_kozar_suit() else 0.0)
 
     def get_average_strength(self) -> float:
-        return 1.0
+        return sum(self.strength(card) for card in self.possible_cards) / len(
+            self.possible_cards
+        )
 
     def evaluate(self, hand: list[Card]) -> float:
-        unknown_sum = 0.0
-        if len(hand) < CARDS_PER_HAND:
-            unknown_sum += (CARDS_PER_HAND - len(hand)) * self.get_average_strength()
-        return (sum(self.strength(card) for card in hand) + unknown_sum) / (
-            float(len(hand)) ** 2.0
+        drawn_cards = (
+            len(hand) if self.empty_deck() else max(0, CARDS_PER_HAND - len(hand))
         )
+        return (
+            sum(self.strength(card) for card in hand)
+            + self.get_average_strength() * drawn_cards
+        ) / (float(len(hand) + drawn_cards) ** 2.0)
 
     def empty_deck(self):
         return self.get_deck_count() == 0
