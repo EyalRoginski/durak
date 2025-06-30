@@ -49,12 +49,10 @@ class ExampleBot(AbstractBot):
         drawn_cards = (
             len(hand) if self.empty_deck() else max(0, CARDS_PER_HAND - len(hand))
         )
-        score: float = (
+        return (
             sum(self.strength(card) for card in hand)
             + self.get_average_strength() * drawn_cards
         ) / (float(len(hand) + drawn_cards) ** 2.0)
-        score += max(0, len(hand) + drawn_cards - CARDS_PER_HAND) * 20.0
-        return score
 
     def empty_deck(self):
         return self.get_deck_count() == 0
@@ -222,7 +220,7 @@ class ExampleBot(AbstractBot):
             return defence_list
         if max_score == forward_score:
             self.log(f"Forwarding")
-            return list(best_forward), []
+            return best_forward, []
 
     def defend_with_cards(
         self, hand: list[Card]
