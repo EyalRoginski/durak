@@ -23,6 +23,9 @@ class ExampleBot(AbstractBot):
         # ordering the cards in an increasing order (one of a few possible orders).
         self.card_order = [(i, suit) for suit in ordered_suits for i in range(13)]
 
+        self.burned_cards: list[Card] = []
+        self.player_cards: list[list[Card]] = [[] for _ in range(num_of_players)]
+
     def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
             for attacking_card in self.get_table_attack():
@@ -102,6 +105,7 @@ class ExampleBot(AbstractBot):
 
     def notify_burn(self, card_list: list[Card]):
         self.log(f"burn: {card_list}")
+        self.burned_cards.extend(card_list)
 
     def notify_cards_drawn_to_hand(self, card_list: list[Card]):
         self.log(f"cards drawn to hand: {card_list}")
@@ -113,9 +117,14 @@ class ExampleBot(AbstractBot):
         self.log(f"Player {passer_index} passed")
 
     def notify_optional_attack(self, attacker_index: int, card_list: list[Card]):
+        for card in card_list:
+            self.player_cards[attacker_index].remove(card)
         self.log(f"Player {attacker_index} optional attack with cards: {card_list}")
 
     def notify_first_attack(self, attacker_index: int, card_list: list[Card]):
+        for card in card_list:
+            self.player_cards[attacker_index].remove(card)
+
         self.log(f"Player {attacker_index} first attack with cards: {card_list}")
 
     def notify_defence(
@@ -124,14 +133,19 @@ class ExampleBot(AbstractBot):
         defending_cards: list[Card],
         indexes: list[int],
     ):
+        for card in defending_cards:
+            self.player_cards[defender_index].remove(card)
         self.log(
             f"Player {defender_index} defended with cards: {defending_cards} at indexes: {indexes}"
         )
 
     def notify_forward(self, forwarder_index: int, card_list: list[Card]):
+        for card in card_list:
+            self.player_cards[forwarder_index].remove(card)
         self.log(f"Player {forwarder_index} forwarded with cards: {card_list}")
 
     def notify_take(self, defender_index: int, card_list: list[Card]):
+        self.player_cards[defender_index].extend(card_list)
         self.log(f"Player {defender_index} took cards: {card_list}")
 
 
