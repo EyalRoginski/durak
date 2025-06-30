@@ -34,15 +34,18 @@ class ExampleBot(AbstractBot):
         for item in hand:
             self.possible_cards.discard(item)
 
+    def strength(self, card: Card) -> float:
+        return card[0] + (15.0 if card[1] == self.get_kozar_suit() else 0.0)
+
+    def evaluate(self, hand: list[Card]) -> float:
+        return sum(self.strength(card) for card in hand) / (float(len(hand)) ** 2.0)
+
     def empty_deck(self):
         return self.get_deck_count() == 0
 
     def optional_attack(self) -> list[Card]:
-        if self.get_table_attack()[-1] != None:
-            return [] # full attack
-        attacking_cards = []
         for card in self.get_hand():
-            for attacking_card in self.get_table_attack() + self.get_table_defence():
+            for attacking_card in self.get_table_attack():
                 if not attacking_card:
                     continue
                 self.possible_cards.discard(attacking_card)
@@ -52,9 +55,9 @@ class ExampleBot(AbstractBot):
                 ):
                     self.log(f"Joining attack with: {card}")
 
-                    attacking_cards.append(card)
+                    return [card]
         self.log("Passing on joining attack.")
-        return attacking_cards
+        return []
 
     def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
@@ -105,11 +108,11 @@ class ExampleBot(AbstractBot):
         cards we forward with (currently just one)
         """
         num = [card for card in self.get_table_attack() if card is not None][0][0]
-        forward_cards = []
+        attacking_cards = []
         for card in self.get_hand():
             if card[0] == num and card[1] != self.get_kozar_suit():
-                forward_cards.append(card)
-        return forward_cards
+                attacking_cards.append(card)
+        return attacking_cards
 
     def defence(self) -> tuple[list[Card], list[int]]:
         # if possible to forward
@@ -121,16 +124,11 @@ class ExampleBot(AbstractBot):
                 return (forward_list, [])
         return self.defend_with_cards(self.get_hand())
 
-    def defend_with_cards(
-        self, hand: list[Card]
-    ) -> tuple[list[tuple[int, int]], list[int]]:
+    def defend_with_cards(self, hand) -> tuple[list[tuple[int, int]], list[int]]:
         defending_cards: list[Card] = []
         indexes: list[int] = []
-        current_defence = self.get_table_defence()
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
-                continue
-            if current_defence[index]: # already defended this one
                 continue
             flag: bool = False
             for card in self.sort_cards(hand):
