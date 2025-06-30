@@ -43,7 +43,6 @@ class ExampleBot(AbstractBot):
     def empty_deck(self):
         return self.get_deck_count() == 0
 
-    """def optional_attack(self) -> list[Card]:
     def optional_attack(self) -> list[Card]:
         if self.get_table_attack()[-1] != None:
             return [] # full attack
@@ -61,29 +60,7 @@ class ExampleBot(AbstractBot):
 
                     attacking_cards.append(card)
         self.log("Passing on joining attack.")
-        return []"""
-
-    def optional_attack_options(self, cardlist: List[Card]) -> List[Card]:
-        options: List[Card] = []
-        for card in cardlist:
-            for attacking_card in self.get_table_attack():
-                if not attacking_card:
-                    continue
-                if attacking_card[0] == card[0]:
-                    options.append(card)
-        return self.non_empty_subsets(options)
-
-    def optional_attack(self, cardlist: List[Card]) -> List[Card]:
-        options: List[Card] = self.optional_attack_options(cardlist)
-        options.append([])
-        best_option: List[Card] = max(
-            options, key=lambda x: self.evaluate(x), default=[]
-        )
-        if best_option:
-            self.log(f"Joining attack with: {best_option}")
-            return best_option
-        self.log("Passing on joining attack.")
-        return []
+        return attacking_cards
 
     def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
@@ -111,7 +88,7 @@ class ExampleBot(AbstractBot):
         values = sorted(set(map(lambda x: x[0], cardlist)))
         return [[y for y in cardlist if y[0] == x] for x in values]
 
-    """def first_attack(self) -> List[Card]:
+    def first_attack(self) -> List[Card]:
         nonkozars, kozars = self.separate_kozars(self.get_hand())
         attack_from = nonkozars
         if not attack_from:
@@ -126,14 +103,7 @@ class ExampleBot(AbstractBot):
         ):  # no card below 5 and duplicate at most 10
             return grouped[0]
 
-        return [card for card in sorted_cards if card[0] == attacking_card_num]"""
-
-    def first_attack(self) -> List[Card]:
-        options: List[Card] = self.non_empty_subsets(self.get_hand())
-        options.sort(key=lambda x: self.evaluate(x), reverse=True)
-        winning_option: List[Card] = options[0]
-        self.log(f"Attacking with: {winning_option}")
-        return winning_option
+        return [card for card in sorted_cards if card[0] == attacking_card_num]
 
     def possible_forward(self) -> list[Card]:
         """
