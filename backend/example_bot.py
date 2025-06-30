@@ -1,6 +1,8 @@
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
 
+Card = tuple[int, int]
+
 
 class ExampleBot(AbstractBot):
     """A bot that plays a trivial strategy."""
@@ -9,8 +11,8 @@ class ExampleBot(AbstractBot):
         self,
         num_of_players: int,
         my_index: int,
-        hand: list[tuple[int, int]],
-        kozar_card: tuple[int, int],
+        hand: list[Card],
+        kozar_card: Card,
         first_player: int,
         lowest_kozar: int,
     ):
@@ -21,22 +23,28 @@ class ExampleBot(AbstractBot):
         # ordering the cards in an increasing order (one of a few possible orders).
         self.card_order = [(i, suit) for suit in ordered_suits for i in range(13)]
 
-    def optional_attack(self) -> list[tuple[int, int]]:
+        self.burned_cards: list[Card] = []
+        self.player_cards: list[list[Card]] = [[] for _ in range(num_of_players)]
+
+    def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
             for attacking_card in self.get_table_attack():
+                if not attacking_card:
+                    continue
                 if attacking_card[0] == card[0]:
                     self.log(f"Joining attack with: {card}")
                     return [card]
         self.log("Passing on joining attack.")
         return []
 
-    def separate_kozars(self) -> tuple[list[tuple[int, int]], list[tuple[int, int]]]:
+
+    def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
         returns list of non-kozars, list of kozars
         """
         kozar = self.get_kozar_suit()
-        nonkozars = [card for card in self.get_hand() if card[1] != kozar]
-        kozars = [card for card in self.get_hand() if card[1] == kozar]
+        nonkozars = [card for card in cardlist if card[1] != kozar]
+        kozars = [card for card in cardlist if card[1] == kozar]
         return nonkozars, kozars
 
     def get_kozars_sorted(self) -> list[tuple[int, int]]:
@@ -46,8 +54,17 @@ class ExampleBot(AbstractBot):
         kozars = self.separate_kozars()[1]
         return sorted(kozars, key=lambda x: x[0])
 
-    def first_attack(self) -> list[tuple[int, int]]:
-        nonkozars, kozars = self.separate_kozars()
+
+    def sort_cards(self, cardlist: List[Card]) -> List[Card]:
+        nonkozars, kozars = self.separate_kozars(cardlist)
+        sorted_cards = sorted(nonkozars) + sorted(kozars)
+        self.log(str(sorted_cards))
+        return sorted_cards
+
+
+    def first_attack(self) -> List[Card]:
+        print(self.sort_cards(self.get_hand()))
+        nonkozars, kozars = self.separate_kozars(self.get_hand())
         attack_from = nonkozars
         if not attack_from:
             attack_from = kozars
@@ -55,7 +72,7 @@ class ExampleBot(AbstractBot):
         attacking_card_num = sorted_cards[0][0]
         return [card for card in sorted_cards if card[0] == attacking_card_num]
 
-    def possible_forward(self) -> list[tuple[int, int]]:
+    def possible_forward(self) -> list[Card]:
         """
         If we can forward without a kozar, return the list representing the
         cards we forward with (currently just one)
@@ -66,8 +83,9 @@ class ExampleBot(AbstractBot):
                 return [card]
         return []
 
-    def defence(self) -> tuple[list[tuple[int, int]], list[int]]:
-        defending_cards, indexes = [], []
+    def defence(self) -> tuple[list[Card], list[int]]:
+        defending_cards: list[Card] = []
+        indexes: list[int] = []
         # if possible to forward
         if all(card is None for card in self.get_table_defence()):
             forward_list = self.possible_forward()
@@ -104,10 +122,11 @@ class ExampleBot(AbstractBot):
         return defending_cards, indexes
 
 
-    def notify_burn(self, card_list: list[tuple[int, int]]):
+    def notify_burn(self, card_list: list[Card]):
         self.log(f"burn: {card_list}")
+        self.burned_cards.extend(card_list)
 
-    def notify_cards_drawn_to_hand(self, card_list: list[tuple[int, int]]):
+    def notify_cards_drawn_to_hand(self, card_list: list[Card]):
         self.log(f"cards drawn to hand: {card_list}")
 
     def notify_winner(self, winner_index: int):
@@ -116,30 +135,36 @@ class ExampleBot(AbstractBot):
     def notify_pass(self, passer_index: int):
         self.log(f"Player {passer_index} passed")
 
-    def notify_optional_attack(
-        self, attacker_index: int, card_list: list[tuple[int, int]]
-    ):
+    def notify_optional_attack(self, attacker_index: int, card_list: list[Card]):
+        for card in card_list:
+            self.player_cards[attacker_index].remove(card)
         self.log(f"Player {attacker_index} optional attack with cards: {card_list}")
 
-    def notify_first_attack(
-        self, attacker_index: int, card_list: list[tuple[int, int]]
-    ):
+    def notify_first_attack(self, attacker_index: int, card_list: list[Card]):
+        for card in card_list:
+            self.player_cards[attacker_index].remove(card)
+
         self.log(f"Player {attacker_index} first attack with cards: {card_list}")
 
     def notify_defence(
         self,
         defender_index: int,
-        defending_cards: list[tuple[int, int]],
+        defending_cards: list[Card],
         indexes: list[int],
     ):
+        for card in defending_cards:
+            self.player_cards[defender_index].remove(card)
         self.log(
             f"Player {defender_index} defended with cards: {defending_cards} at indexes: {indexes}"
         )
 
-    def notify_forward(self, forwarder_index: int, card_list: list[tuple[int, int]]):
+    def notify_forward(self, forwarder_index: int, card_list: list[Card]):
+        for card in card_list:
+            self.player_cards[forwarder_index].remove(card)
         self.log(f"Player {forwarder_index} forwarded with cards: {card_list}")
 
-    def notify_take(self, defender_index: int, card_list: list[tuple[int, int]]):
+    def notify_take(self, defender_index: int, card_list: list[Card]):
+        self.player_cards[defender_index].extend(card_list)
         self.log(f"Player {defender_index} took cards: {card_list}")
 
 
