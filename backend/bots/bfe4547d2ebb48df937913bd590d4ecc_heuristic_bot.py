@@ -44,7 +44,7 @@ class ExampleBot(AbstractBot):
 
     def get_average_strength(self) -> float:
         return sum(self.strength(card) for card in self.possible_cards) / len(
-            self.possible_cards if self.possible_cards else 0
+            self.possible_cards
         )
 
     def evaluate(self, hand: list[Card]) -> float:
@@ -156,10 +156,7 @@ class ExampleBot(AbstractBot):
         return [card for card in sorted_cards if card[0] == attacking_card_num]"""
 
     def first_attack(self) -> List[Card]:
-        options: List[Card] = sum([
-            self.non_empty_subsets(g)
-            for g in self.group_by_num(self.get_hand())
-            ], [])
+        options: List[Card] = self.non_empty_subsets(self.get_hand())
         best_option: List[Card] = max(
             options,
             key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))),
@@ -171,7 +168,7 @@ class ExampleBot(AbstractBot):
         ]
         self.log(f"Options: {options}, scores: {scores}")
         self.log(f"Attacking with: {best_option}")
-        return list(best_option)
+        return best_option
 
     def possible_forward(self) -> list[Card]:
         """

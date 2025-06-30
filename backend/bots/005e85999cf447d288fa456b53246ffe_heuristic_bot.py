@@ -171,7 +171,7 @@ class ExampleBot(AbstractBot):
         ]
         self.log(f"Options: {options}, scores: {scores}")
         self.log(f"Attacking with: {best_option}")
-        return list(best_option)
+        return best_option
 
     def possible_forward(self) -> list[Card]:
         """
