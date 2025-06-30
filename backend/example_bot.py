@@ -83,8 +83,6 @@ class ExampleBot(AbstractBot):
         return []
 
     def defence(self) -> tuple[list[Card], list[int]]:
-        defending_cards: list[Card] = []
-        indexes: list[int] = []
         # if possible to forward
         if all(card is None for card in self.get_table_defence()):
             forward_list = self.possible_forward()
@@ -95,11 +93,13 @@ class ExampleBot(AbstractBot):
         return self.defend_with_cards()
 
     def defend_with_cards(self) -> tuple[list[tuple[int, int]], list[int]]:
+        defending_cards: list[Card] = []
+        indexes: list[int] = []
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
                 continue
             flag: bool = False
-            for card in sort_cards(self.get_hand()):
+            for card in self.sort_cards(self.get_hand()):
                 if card[0] > attacking_card[0] and card[1] == attacking_card[1]:
                     defending_cards.append(card)
                     indexes.append(index)
