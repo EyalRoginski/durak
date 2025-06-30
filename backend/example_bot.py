@@ -43,7 +43,7 @@ class ExampleBot(AbstractBot):
                 if not attacking_card:
                     continue
                 self.possible_cards.discard(attacking_card)
-                
+
                 if attacking_card[0] == card[0] and (
                     self.empty_deck() or card[1] != self.get_kozar_suit()
                 ):
@@ -75,11 +75,9 @@ class ExampleBot(AbstractBot):
         self.log(str(sorted_cards))
         return sorted_cards
 
-
     def group_by_num(self, cardlist: List[Card]) -> List[List[Card]]:
-        values = sorted(set(map(lambda x:x[0], cardlist)))
-        return [[y for y in cardlist if y[0]==x] for x in values]
-
+        values = sorted(set(map(lambda x: x[0], cardlist)))
+        return [[y for y in cardlist if y[0] == x] for x in values]
 
     def first_attack(self) -> List[Card]:
         nonkozars, kozars = self.separate_kozars(self.get_hand())
@@ -91,12 +89,12 @@ class ExampleBot(AbstractBot):
 
         grouped = [g for g in self.group_by_num(sorted_cards) if len(g) > 1]
         self.log(str(grouped))
-        if attacking_card_num >= 3 and grouped and grouped[0][0][0] <= 8: # no card below 5 and duplicate at most 10
+        if (
+            attacking_card_num >= 3 and grouped and grouped[0][0][0] <= 8
+        ):  # no card below 5 and duplicate at most 10
             return grouped[0]
 
         return [card for card in sorted_cards if card[0] == attacking_card_num]
-        
-
 
     def possible_forward(self) -> list[Card]:
         """
@@ -104,11 +102,11 @@ class ExampleBot(AbstractBot):
         cards we forward with (currently just one)
         """
         num = [card for card in self.get_table_attack() if card is not None][0][0]
-        attacking_cards = []
+        forward_cards = []
         for card in self.get_hand():
             if card[0] == num and card[1] != self.get_kozar_suit():
-                attacking_cards.append(card)
-        return attacking_cards
+                forward_cards.append(card)
+        return forward_cards
 
     def defence(self) -> tuple[list[Card], list[int]]:
         # if possible to forward
@@ -164,6 +162,7 @@ class ExampleBot(AbstractBot):
 
     def notify_optional_attack(self, attacker_index: int, card_list: list[Card]):
         for card in card_list:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[attacker_index].remove(card)
             except ValueError:
@@ -172,6 +171,7 @@ class ExampleBot(AbstractBot):
 
     def notify_first_attack(self, attacker_index: int, card_list: list[Card]):
         for card in card_list:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[attacker_index].remove(card)
             except ValueError:
@@ -186,6 +186,7 @@ class ExampleBot(AbstractBot):
         indexes: list[int],
     ):
         for card in defending_cards:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[defender_index].remove(card)
             except ValueError:
@@ -196,6 +197,7 @@ class ExampleBot(AbstractBot):
 
     def notify_forward(self, forwarder_index: int, card_list: list[Card]):
         for card in card_list:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[forwarder_index].remove(card)
             except ValueError:
