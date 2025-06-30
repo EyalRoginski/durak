@@ -40,9 +40,10 @@ class ExampleBot(AbstractBot):
     def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
             for attacking_card in self.get_table_attack():
-                self.possible_cards.discard(attacking_card)
                 if not attacking_card:
                     continue
+                self.possible_cards.discard(attacking_card)
+                
                 if attacking_card[0] == card[0] and (
                     self.empty_deck() or card[1] != self.get_kozar_suit()
                 ):
