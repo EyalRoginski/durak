@@ -23,7 +23,9 @@ class ExampleBot(AbstractBot):
         # ordering the cards in an increasing order (one of a few possible orders).
         self.card_order = [(i, suit) for suit in ordered_suits for i in range(13)]
 
+        # All the cards that were burned
         self.burned_cards: list[Card] = []
+        # Mapping player indexes to the cards we know they have.
         self.player_cards: list[list[Card]] = [[] for _ in range(num_of_players)]
 
     def optional_attack(self) -> list[Card]:
@@ -36,7 +38,6 @@ class ExampleBot(AbstractBot):
                     return [card]
         self.log("Passing on joining attack.")
         return []
-
 
     def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
@@ -54,13 +55,11 @@ class ExampleBot(AbstractBot):
         kozars = self.separate_kozars(self.get_hand())[1]
         return sorted(kozars, key=lambda x: x[0])
 
-
     def sort_cards(self, cardlist: List[Card]) -> List[Card]:
         nonkozars, kozars = self.separate_kozars(cardlist)
         sorted_cards = sorted(nonkozars) + sorted(kozars)
         self.log(str(sorted_cards))
         return sorted_cards
-
 
     def first_attack(self) -> List[Card]:
         print(self.sort_cards(self.get_hand()))
@@ -121,7 +120,6 @@ class ExampleBot(AbstractBot):
         self.log(f"Defending with {defending_cards}, {indexes}")
         return defending_cards, indexes
 
-
     def notify_burn(self, card_list: list[Card]):
         self.log(f"burn: {card_list}")
         self.burned_cards.extend(card_list)
@@ -137,12 +135,18 @@ class ExampleBot(AbstractBot):
 
     def notify_optional_attack(self, attacker_index: int, card_list: list[Card]):
         for card in card_list:
-            self.player_cards[attacker_index].remove(card)
+            try:
+                self.player_cards[attacker_index].remove(card)
+            except ValueError:
+                pass
         self.log(f"Player {attacker_index} optional attack with cards: {card_list}")
 
     def notify_first_attack(self, attacker_index: int, card_list: list[Card]):
         for card in card_list:
-            self.player_cards[attacker_index].remove(card)
+            try:
+                self.player_cards[attacker_index].remove(card)
+            except ValueError:
+                pass
 
         self.log(f"Player {attacker_index} first attack with cards: {card_list}")
 
@@ -153,14 +157,20 @@ class ExampleBot(AbstractBot):
         indexes: list[int],
     ):
         for card in defending_cards:
-            self.player_cards[defender_index].remove(card)
+            try:
+                self.player_cards[defender_index].remove(card)
+            except ValueError:
+                pass
         self.log(
             f"Player {defender_index} defended with cards: {defending_cards} at indexes: {indexes}"
         )
 
     def notify_forward(self, forwarder_index: int, card_list: list[Card]):
         for card in card_list:
-            self.player_cards[forwarder_index].remove(card)
+            try:
+                self.player_cards[forwarder_index].remove(card)
+            except ValueError:
+                pass
         self.log(f"Player {forwarder_index} forwarded with cards: {card_list}")
 
     def notify_take(self, defender_index: int, card_list: list[Card]):
