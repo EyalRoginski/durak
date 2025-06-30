@@ -1,6 +1,8 @@
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
 
+from configurations import CARDS_PER_HAND
+
 Card = tuple[int, int]
 
 
@@ -37,8 +39,16 @@ class ExampleBot(AbstractBot):
     def strength(self, card: Card) -> float:
         return card[0] + (15.0 if card[1] == self.get_kozar_suit() else 0.0)
 
+    def get_average_strength(self) -> float:
+        return 1.0
+
     def evaluate(self, hand: list[Card]) -> float:
-        return sum(self.strength(card) for card in hand) / (float(len(hand)) ** 2.0)
+        unknown_sum = 0.0
+        if len(hand) < CARDS_PER_HAND:
+            unknown_sum += (CARDS_PER_HAND - len(hand)) * self.get_average_strength()
+        return (sum(self.strength(card) for card in hand) + unknown_sum) / (
+            float(len(hand)) ** 2.0
+        )
 
     def empty_deck(self):
         return self.get_deck_count() == 0
@@ -46,7 +56,7 @@ class ExampleBot(AbstractBot):
     """def optional_attack(self) -> list[Card]:
     def optional_attack(self) -> list[Card]:
         if self.get_table_attack()[-1] != None:
-            return [] # full attack
+            return []  # full attack
         attacking_cards = []
         for card in self.get_hand():
             for attacking_card in self.get_table_attack() + self.get_table_defence():
@@ -147,15 +157,56 @@ class ExampleBot(AbstractBot):
                 attacking_cards.append(card)
         return attacking_cards
 
+    def non_empty_subsets(self, l: list[Any]) -> list[list[Any]]:
+        result: list[list[Any]] = []
+        for r in range(1, len(l) + 1):
+            result.extend(list(combinations(l, r)))
+        return result
+
+    def all_possible_forwards(self) -> list[list[Card]]:
+        num = [card for card in self.get_table_attack() if card is not None][0][0]
+        forwarding_cards: list[Card] = []
+        for card in self.get_hand():
+            if card[0] == num:
+                forwarding_cards.append(card)
+        return self.non_empty_subsets(forwarding_cards)
+
     def defence(self) -> tuple[list[Card], list[int]]:
         # if possible to forward
-        if all(card is None for card in self.get_table_defence()):
-            forward_list = self.possible_forward()
-            if forward_list:
-                # forward
-                self.log(f"Forwarding with {forward_list}")
-                return (forward_list, [])
-        return self.defend_with_cards(self.get_hand())
+        forward_lists = self.all_possible_forwards()
+        defence_list = self.defend_with_cards(self.get_hand())
+
+        best_forward = max(
+            forward_lists,
+            key=lambda cards: self.evaluate(
+                list(set(self.get_hand()) - set(cards))
+            ),  # Hand after forward
+            default=None,
+        )
+        forward_score = (
+            self.evaluate(list(set(self.get_hand()) - set(best_forward)))
+            if best_forward
+            else -100.0
+        )
+
+        defence_score = (
+            self.evaluate(list(set(self.get_hand()) - set(defence_list[0])))
+            if defence_list[0]
+            else -100.0
+        )
+
+        attacking_cards = list(
+            filter(lambda card: card is not None, self.get_table_attack())
+        )
+        take_score = self.evaluate(self.get_hand() + attacking_cards)
+
+        max_score = max([take_score, defence_score, forward_score])
+        if max_score == take_score:
+            return [], []
+        if max_score == defence_score:
+            return defence_list
+        if max_score == forward_score:
+            return best_forward, []
 
     def defend_with_cards(
         self, hand: list[Card]
@@ -166,7 +217,7 @@ class ExampleBot(AbstractBot):
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
                 continue
-            if current_defence[index]: # already defended this one
+            if current_defence[index]:  # already defended this one
                 continue
             flag: bool = False
             for card in self.sort_cards(hand):
