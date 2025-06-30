@@ -10,9 +10,9 @@ Card = tuple[int, int]
 class ExampleBot(AbstractBot):
     """A bot that plays a trivial strategy."""
 
-    KOZAR_BONUS: float = 12.0
+    KOZAR_BONUS: float = 7.0
     HAND_SIZE_POWER: float = 2.0
-    OVER_MAX_SCORE: float = -5.0
+    OVER_MAX_SCORE: float = -20.0
 
     def game_init(
         self,
@@ -70,7 +70,19 @@ class ExampleBot(AbstractBot):
         return score
     
     def evaluate_attack(self, hand: list[Card]) -> float:
-        score: float = self.evaluate(hand)
+        if not hand and self.empty_deck():
+            return 1000.0
+
+        drawn_cards = (
+            len(hand) if self.empty_deck() else max(0, CARDS_PER_HAND - len(hand))
+        )
+        score: float = (
+            sum(self.strength(card) for card in hand)
+            + self.get_average_strength() * drawn_cards
+        ) / (float(len(hand) + drawn_cards) ** ExampleBot.HAND_SIZE_POWER)
+        score += (
+            max(0, len(hand) + drawn_cards - CARDS_PER_HAND) * ExampleBot.OVER_MAX_SCORE
+        )
         return score + self.check_forward_circle(
             hand[0], len([card for card in self.get_hand() if card[0] == hand[0][0]])
         )
