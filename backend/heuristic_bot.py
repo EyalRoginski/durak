@@ -35,7 +35,7 @@ class ExampleBot(AbstractBot):
         self.player_cards[my_index] = self.sort_cards(hand)
         self.possible_cards: set[Card] = {(x, y) for x in range(13) for y in range(4)}
         self.my_index: int = my_index
-
+        self.num_players = num_of_players
         for item in hand:
             self.possible_cards.discard(item)
 
@@ -60,26 +60,6 @@ class ExampleBot(AbstractBot):
 
     def empty_deck(self):
         return self.get_deck_count() == 0
-
-    """def optional_attack(self) -> list[Card]:
-    def optional_attack(self) -> list[Card]:
-        if self.get_table_attack()[-1] != None:
-            return []  # full attack
-        attacking_cards = []
-        for card in self.get_hand():
-            for attacking_card in self.get_table_attack() + self.get_table_defence():
-                if not attacking_card:
-                    continue
-                self.possible_cards.discard(attacking_card)
-
-                if attacking_card[0] == card[0] and (
-                    self.empty_deck() or card[1] != self.get_kozar_suit()
-                ):
-                    self.log(f"Joining attack with: {card}")
-
-                    attacking_cards.append(card)
-        self.log("Passing on joining attack.")
-        return []"""
 
     def optional_attack_options(self, cardlist: List[Card]) -> List[Card]:
         options: List[Card] = []
@@ -172,6 +152,48 @@ class ExampleBot(AbstractBot):
         self.log(f"Options: {options}, scores: {scores}")
         self.log(f"Attacking with: {best_option}")
         return list(best_option)
+
+    def check_forward_circle(self, card: Card, num_cards: int) -> float:
+        """
+        Check if a forwarding circle that gets back to us is possible. The higher the score, the less likely it is to get back to us.
+        \nChoose option with highest score
+        """
+        card_num = card[0]
+        cards_in_game = (
+            4
+            - num_cards
+            - len([burned for burned in self.burned_cards if burned[0] == card_num])
+        )
+        cards_in_deck = (
+            len([unknown for unknown in self.possible_cards if unknown[0] == card_num])
+            - num_cards
+        )
+        if cards_in_game < self.num_players - 1:
+            return 1
+        chances = 1
+        for index in range(1, self.num_players - 1):
+            cur_player = (self.my_index + index) % self.num_players
+            if (
+                len(
+                    card
+                    for card in self.player_cards[cur_player]
+                    if card[0] == card_num
+                )
+                > 0
+            ):
+                continue
+            unknown_cards = self.unknown_cards_in_hand(cur_player)
+            if unknown_cards == 0:
+                return 1
+            chances *= (
+                1 - (1 - unknown_cards / len(self.possible_cards)) ** cards_in_deck
+            )
+        return 1 - chances
+
+    def unknown_cards_in_hand(self, player_ind: int) -> int:
+        return self.get_num_cards_per_hand()[player_ind] - len(
+            self.player_cards[player_ind]
+        )
 
     def possible_forward(self) -> list[Card]:
         """
