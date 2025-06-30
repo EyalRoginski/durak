@@ -51,7 +51,7 @@ class ExampleBot(AbstractBot):
         """
         Returns the kozars in sorted order.
         """
-        kozars = self.separate_kozars()[1]
+        kozars = self.separate_kozars(self.get_hand())[1]
         return sorted(kozars, key=lambda x: x[0])
 
 
