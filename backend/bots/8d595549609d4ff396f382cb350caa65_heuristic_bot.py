@@ -72,46 +72,36 @@ class ExampleBot(AbstractBot):
     def empty_deck(self):
         return self.get_deck_count() == 0
 
-    def optional_attack_options_inn(self, our_hand: List[Card], on_table: List[Card]):
+    def optional_attack_options(self, cardlist: List[Card]) -> List[Card]:
         options: List[Card] = []
-        for card in our_hand:
-            for table_card in on_table:
+        for card in cardlist:
+            for table_card in self.get_table_attack() + self.get_table_defence():
                 if not table_card:
                     continue
                 if table_card[0] == card[0]:
                     options.append(card)
         return self.non_empty_subsets(options)
 
-    def optional_attack_options(self, cardlist: List[Card]) -> List[Card]:
-        return self.optional_attack_options_inn(
-            cardlist, self.get_table_attack() + self.get_table_defence()
-        )
-
-    def pick_opt_attack(self, options: List[Card], log: bool, our_hand: List[Card]):
-        options.append([])
-        best_option: List[Card] = max(
-            options,
-            key=lambda x: self.evaluate(list(set(our_hand) - set(x))),
-            default=[],
-        )
-        scores = [
-            self.evaluate(list(set(our_hand) - set(option))) for option in options
-        ]
-        if log:
-            self.log(f"Options: {options}, scores: {scores}")
-        if best_option:
-            if log:
-                self.log(f"Joining attack with: {best_option}")
-            return list(best_option)
-        if log:
-            self.log("Passing on joining attack.")
-        return []
-
     def optional_attack(self) -> List[Card]:
         if self.get_table_attack()[-1] != None:
             return []  # full attack
         options: List[Card] = self.optional_attack_options(self.get_hand())
-        return self.pick_opt_attack(options, True, self.get_hand())
+        options.append([])
+        best_option: List[Card] = max(
+            options,
+            key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))),
+            default=[],
+        )
+        scores = [
+            self.evaluate(list(set(self.get_hand()) - set(option)))
+            for option in options
+        ]
+        self.log(f"Options: {options}, scores: {scores}")
+        if best_option:
+            self.log(f"Joining attack with: {best_option}")
+            return list(best_option)
+        self.log("Passing on joining attack.")
+        return []
 
     def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
@@ -286,13 +276,6 @@ class ExampleBot(AbstractBot):
         if max_score == forward_score:
             self.log(f"Forwarding")
             return list(best_forward), []
-
-    def enemy_optional_attack(
-        self, num_player: int, cards_on_table: set[Card], free_attack_slots: int
-    ) -> set[Card]:
-        attack_set = {}
-
-        return attack_set
 
     def defend_with_cards(
         self, hand: list[Card]
