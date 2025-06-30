@@ -166,6 +166,7 @@ class ExampleBot(AbstractBot):
 
     def notify_optional_attack(self, attacker_index: int, card_list: list[Card]):
         for card in card_list:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[attacker_index].remove(card)
             except ValueError:
@@ -174,6 +175,7 @@ class ExampleBot(AbstractBot):
 
     def notify_first_attack(self, attacker_index: int, card_list: list[Card]):
         for card in card_list:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[attacker_index].remove(card)
             except ValueError:
@@ -188,6 +190,7 @@ class ExampleBot(AbstractBot):
         indexes: list[int],
     ):
         for card in defending_cards:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[defender_index].remove(card)
             except ValueError:
@@ -198,6 +201,7 @@ class ExampleBot(AbstractBot):
 
     def notify_forward(self, forwarder_index: int, card_list: list[Card]):
         for card in card_list:
+            self.possible_cards.discard(card)
             try:
                 self.player_cards[forwarder_index].remove(card)
             except ValueError:
