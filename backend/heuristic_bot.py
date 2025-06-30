@@ -312,13 +312,12 @@ class ExampleBot(AbstractBot):
                 break
         return attacks
 
-    def defend_with_cards(
-        self, hand: list[Card]
-    ) -> tuple[list[tuple[int, int]], list[int]]:
+    def defend_with_cards_inn(
+        self, hand: List[Card], current_defence, table_attack, log: bool
+    ):
         defending_cards: list[Card] = []
         indexes: list[int] = []
-        current_defence = self.get_table_defence()
-        for index, attacking_card in enumerate(self.get_table_attack()):
+        for index, attacking_card in enumerate(table_attack):
             if attacking_card is None:
                 continue
             if current_defence[index]:  # already defended this one
@@ -341,10 +340,19 @@ class ExampleBot(AbstractBot):
                     indexes.append(index)
                     hand.remove(kozars[0])
                 else:
-                    self.log("Taking cards.")
+                    if log:
+                        self.log("Taking cards.")
                     return [], []
-        self.log(f"Defending with {defending_cards}, {indexes}")
+        if log:
+            self.log(f"Defending with {defending_cards}, {indexes}")
         return defending_cards, indexes
+
+    def defend_with_cards(
+        self, hand: list[Card]
+    ) -> tuple[list[tuple[int, int]], list[int]]:
+        return self.defend_with_cards_inn(
+            hand, self.get_table_defence(), self.get_table_attack(), True
+        )
 
     def notify_burn(self, card_list: list[Card]):
         self.log(f"burn: {card_list}")
