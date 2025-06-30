@@ -1,6 +1,6 @@
 from durak_actions import Input_actions, Output_actions
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple, Dict
+from typing import Any, List, Tuple, Dict, Optional
 from time import time
 
 
@@ -93,11 +93,11 @@ class AbstractBot(ABC):
         """Get the kozar card."""
         return self.__kozar_card
 
-    def get_table_attack(self) -> List[Tuple[int, int]]:
+    def get_table_attack(self) -> List[Optional[Tuple[int, int]]]:
         """Get the current attacking cards on the table."""
         return self.__table_attack
 
-    def get_table_defence(self) -> List[Tuple[int, int]]:
+    def get_table_defence(self) -> List[Optional[Tuple[int, int]]]:
         """Get the current defending cards on the table."""
         return self.__table_defence
 
