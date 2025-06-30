@@ -24,15 +24,17 @@ class ExampleBot(AbstractBot):
         ordered_suits[self.get_kozar_suit()] = 3
         ordered_suits[3] = self.get_kozar_suit()
         # ordering the cards in an increasing order (one of a few possible orders).
-        self.card_order = [(i, suit) for suit in ordered_suits for i in range(13)]
+        self.card_order: list[Card] = [
+            (i, suit) for suit in ordered_suits for i in range(13)
+        ]
 
         # All the cards that were burned
         self.burned_cards: list[Card] = []
         # Mapping player indexes to the cards we know they have.
         self.player_cards: list[list[Card]] = [[] for _ in range(num_of_players)]
         self.player_cards[my_index] = self.sort_cards(hand)
-        self.possible_cards = {(x, y) for x in range(13) for y in range(4)}
-        self.my_index = my_index
+        self.possible_cards: set[Card] = {(x, y) for x in range(13) for y in range(4)}
+        self.my_index: int = my_index
 
         for item in hand:
             self.possible_cards.discard(item)
@@ -149,7 +151,9 @@ class ExampleBot(AbstractBot):
     def first_attack(self) -> List[Card]:
         options: List[Card] = self.non_empty_subsets(self.get_hand())
         best_option: List[Card] = max(
-            options, key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))), default=[]
+            options,
+            key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))),
+            default=[],
         )
         self.log(f"Attacking with: {winning_option}")
         return winning_option
