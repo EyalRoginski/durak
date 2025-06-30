@@ -40,10 +40,9 @@ class ExampleBot(AbstractBot):
     def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
             for attacking_card in self.get_table_attack():
+                self.possible_cards.discard(attacking_card)
                 if not attacking_card:
                     continue
-                self.possible_cards.discard(attacking_card)
-                
                 if attacking_card[0] == card[0] and (
                     self.empty_deck() or card[1] != self.get_kozar_suit()
                 ):
@@ -75,28 +74,15 @@ class ExampleBot(AbstractBot):
         self.log(str(sorted_cards))
         return sorted_cards
 
-
-    def group_by_num(self, cardlist: List[Card]) -> List[List[Card]]:
-        values = sorted(set(map(lambda x:x[0], cardlist)))
-        return [[y for y in cardlist if y[0]==x] for x in values]
-
-
     def first_attack(self) -> List[Card]:
+        print(self.sort_cards(self.get_hand()))
         nonkozars, kozars = self.separate_kozars(self.get_hand())
         attack_from = nonkozars
         if not attack_from:
             attack_from = kozars
         sorted_cards = sorted(attack_from)
         attacking_card_num = sorted_cards[0][0]
-
-        grouped = [g for g in self.group_by_num(sorted_cards) if len(g) > 1]
-        self.log(str(grouped))
-        if attacking_card_num >= 3 and grouped and grouped[0][0][0] <= 8: # no card below 5 and duplicate at most 10
-            return grouped[0]
-
         return [card for card in sorted_cards if card[0] == attacking_card_num]
-        
-
 
     def possible_forward(self) -> list[Card]:
         """
@@ -104,11 +90,10 @@ class ExampleBot(AbstractBot):
         cards we forward with (currently just one)
         """
         num = [card for card in self.get_table_attack() if card is not None][0][0]
-        attacking_cards = []
         for card in self.get_hand():
             if card[0] == num and card[1] != self.get_kozar_suit():
-                attacking_cards.append(card)
-        return attacking_cards
+                return [card]
+        return []
 
     def defence(self) -> tuple[list[Card], list[int]]:
         # if possible to forward
@@ -120,9 +105,7 @@ class ExampleBot(AbstractBot):
                 return (forward_list, [])
         return self.defend_with_cards(self.get_hand())
 
-    def defend_with_cards(
-        self, hand: list[Card]
-    ) -> tuple[list[tuple[int, int]], list[int]]:
+    def defend_with_cards(self, hand) -> tuple[list[tuple[int, int]], list[int]]:
         defending_cards: list[Card] = []
         indexes: list[int] = []
         for index, attacking_card in enumerate(self.get_table_attack()):
