@@ -49,12 +49,10 @@ class ExampleBot(AbstractBot):
         drawn_cards = (
             len(hand) if self.empty_deck() else max(0, CARDS_PER_HAND - len(hand))
         )
-        score: float = (
+        return (
             sum(self.strength(card) for card in hand)
             + self.get_average_strength() * drawn_cards
         ) / (float(len(hand) + drawn_cards) ** 2.0)
-        score += max(0, len(hand) + drawn_cards - CARDS_PER_HAND) * -20.0
-        return score
 
     def empty_deck(self):
         return self.get_deck_count() == 0
@@ -95,7 +93,7 @@ class ExampleBot(AbstractBot):
         options: List[Card] = self.optional_attack_options(cardlist)
         options.append([])
         best_option: List[Card] = max(
-            options, key=lambda x: list(set(self.get_hand()) - set(x)), default=[]
+            options, key=lambda x: self.evaluate(self.get_hand().remove(x)), default=[]
         )
         if best_option:
             self.log(f"Joining attack with: {best_option}")
@@ -149,7 +147,7 @@ class ExampleBot(AbstractBot):
     def first_attack(self) -> List[Card]:
         options: List[Card] = self.non_empty_subsets(self.get_hand())
         best_option: List[Card] = max(
-            options, key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))), default=[]
+            options, key=lambda x: self.evaluate(self.get_hand().remove(x)), default=[]
         )
         self.log(f"Attacking with: {winning_option}")
         return winning_option
@@ -216,14 +214,11 @@ class ExampleBot(AbstractBot):
 
         max_score = max([take_score, defence_score, forward_score])
         if max_score == take_score:
-            self.log(f"Taking")
             return [], []
         if max_score == defence_score:
-            self.log(f"Defending")
             return defence_list
         if max_score == forward_score:
-            self.log(f"Forwarding")
-            return list(best_forward), []
+            return best_forward, []
 
     def defend_with_cards(
         self, hand: list[Card]

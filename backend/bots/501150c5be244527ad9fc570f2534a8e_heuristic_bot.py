@@ -95,7 +95,7 @@ class ExampleBot(AbstractBot):
         options: List[Card] = self.optional_attack_options(cardlist)
         options.append([])
         best_option: List[Card] = max(
-            options, key=lambda x: list(set(self.get_hand()) - set(x)), default=[]
+            options, key=lambda x: self.evaluate(x), default=[]
         )
         if best_option:
             self.log(f"Joining attack with: {best_option}")
@@ -148,9 +148,8 @@ class ExampleBot(AbstractBot):
 
     def first_attack(self) -> List[Card]:
         options: List[Card] = self.non_empty_subsets(self.get_hand())
-        best_option: List[Card] = max(
-            options, key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))), default=[]
-        )
+        options.sort(key=lambda x: self.evaluate(x), reverse=True)
+        winning_option: List[Card] = options[0]
         self.log(f"Attacking with: {winning_option}")
         return winning_option
 

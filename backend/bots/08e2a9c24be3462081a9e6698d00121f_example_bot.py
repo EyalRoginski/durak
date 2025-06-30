@@ -1,8 +1,5 @@
-from itertools import combinations
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
-
-from configurations import CARDS_PER_HAND
 
 Card = tuple[int, int]
 
@@ -37,32 +34,12 @@ class ExampleBot(AbstractBot):
         for item in hand:
             self.possible_cards.discard(item)
 
-    def strength(self, card: Card) -> float:
-        return card[0] + (7.0 if card[1] == self.get_kozar_suit() else 0.0)
-
-    def get_average_strength(self) -> float:
-        return sum(self.strength(card) for card in self.possible_cards) / len(
-            self.possible_cards
-        )
-
-    def evaluate(self, hand: list[Card]) -> float:
-        drawn_cards = (
-            len(hand) if self.empty_deck() else max(0, CARDS_PER_HAND - len(hand))
-        )
-        score: float = (
-            sum(self.strength(card) for card in hand)
-            + self.get_average_strength() * drawn_cards
-        ) / (float(len(hand) + drawn_cards) ** 2.0)
-        score += max(0, len(hand) + drawn_cards - CARDS_PER_HAND) * -20.0
-        return score
-
     def empty_deck(self):
         return self.get_deck_count() == 0
 
-    """def optional_attack(self) -> list[Card]:
     def optional_attack(self) -> list[Card]:
         if self.get_table_attack()[-1] != None:
-            return []  # full attack
+            return [] # full attack
         attacking_cards = []
         for card in self.get_hand():
             for attacking_card in self.get_table_attack() + self.get_table_defence():
@@ -77,31 +54,7 @@ class ExampleBot(AbstractBot):
 
                     attacking_cards.append(card)
         self.log("Passing on joining attack.")
-        return []"""
-
-    def optional_attack_options(self, cardlist: List[Card]) -> List[Card]:
-        options: List[Card] = []
-        for card in cardlist:
-            for attacking_card in self.get_table_attack():
-                if not attacking_card:
-                    continue
-                if attacking_card[0] == card[0]:
-                    options.append(card)
-        return self.non_empty_subsets(options)
-
-    def optional_attack(self, cardlist: List[Card]) -> List[Card]:
-        if self.get_table_attack()[-1] != None:
-            return []  # full attack
-        options: List[Card] = self.optional_attack_options(cardlist)
-        options.append([])
-        best_option: List[Card] = max(
-            options, key=lambda x: list(set(self.get_hand()) - set(x)), default=[]
-        )
-        if best_option:
-            self.log(f"Joining attack with: {best_option}")
-            return best_option
-        self.log("Passing on joining attack.")
-        return []
+        return attacking_cards
 
     def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
@@ -129,7 +82,7 @@ class ExampleBot(AbstractBot):
         values = sorted(set(map(lambda x: x[0], cardlist)))
         return [[y for y in cardlist if y[0] == x] for x in values]
 
-    """def first_attack(self) -> List[Card]:
+    def first_attack(self) -> List[Card]:
         nonkozars, kozars = self.separate_kozars(self.get_hand())
         attack_from = nonkozars
         if not attack_from:
@@ -144,15 +97,7 @@ class ExampleBot(AbstractBot):
         ):  # no card below 5 and duplicate at most 10
             return grouped[0]
 
-        return [card for card in sorted_cards if card[0] == attacking_card_num]"""
-
-    def first_attack(self) -> List[Card]:
-        options: List[Card] = self.non_empty_subsets(self.get_hand())
-        best_option: List[Card] = max(
-            options, key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))), default=[]
-        )
-        self.log(f"Attacking with: {winning_option}")
-        return winning_option
+        return [card for card in sorted_cards if card[0] == attacking_card_num]
 
     def possible_forward(self) -> list[Card]:
         """
@@ -160,70 +105,21 @@ class ExampleBot(AbstractBot):
         cards we forward with (currently just one)
         """
         num = [card for card in self.get_table_attack() if card is not None][0][0]
-        attacking_cards = []
+        forward_cards = []
         for card in self.get_hand():
             if card[0] == num and card[1] != self.get_kozar_suit():
-                attacking_cards.append(card)
-        return attacking_cards
-
-    def non_empty_subsets(self, l: list[Any]) -> list[list[Any]]:
-        result: list[list[Any]] = []
-        for r in range(1, len(l) + 1):
-            result.extend(list(combinations(l, r)))
-        return result
-
-    def all_possible_forwards(self) -> list[list[Card]]:
-        num = [card for card in self.get_table_attack() if card is not None][0][0]
-        forwarding_cards: list[Card] = []
-        for card in self.get_hand():
-            if card[0] == num:
-                forwarding_cards.append(card)
-        return self.non_empty_subsets(forwarding_cards)
+                forward_cards.append(card)
+        return forward_cards
 
     def defence(self) -> tuple[list[Card], list[int]]:
         # if possible to forward
-        forward_lists = self.all_possible_forwards()
-        defence_list = self.defend_with_cards(self.get_hand())
-        self.log(f"All possible forwards: {forward_lists}")
-
-        best_forward = max(
-            forward_lists,
-            key=lambda cards: self.evaluate(
-                list(set(self.get_hand()) - set(cards))
-            ),  # Hand after forward
-            default=None,
-        )
-
-        forward_score = (
-            self.evaluate(list(set(self.get_hand()) - set(best_forward)))
-            if best_forward
-            else -100.0
-        )
-        self.log(f"Best forward: {best_forward}; score: {forward_score}")
-
-        defence_score = (
-            self.evaluate(list(set(self.get_hand()) - set(defence_list[0])))
-            if defence_list[0]
-            else -100.0
-        )
-        self.log(f"Defence: {defence_list}; score: {defence_score}")
-
-        attacking_cards = list(
-            filter(lambda card: card is not None, self.get_table_attack())
-        )
-        take_score = self.evaluate(self.get_hand() + attacking_cards)
-        self.log(f"Take score: {take_score}")
-
-        max_score = max([take_score, defence_score, forward_score])
-        if max_score == take_score:
-            self.log(f"Taking")
-            return [], []
-        if max_score == defence_score:
-            self.log(f"Defending")
-            return defence_list
-        if max_score == forward_score:
-            self.log(f"Forwarding")
-            return list(best_forward), []
+        if all(card is None for card in self.get_table_defence()):
+            forward_list = self.possible_forward()
+            if forward_list:
+                # forward
+                self.log(f"Forwarding with {forward_list}")
+                return (forward_list, [])
+        return self.defend_with_cards(self.get_hand())
 
     def defend_with_cards(
         self, hand: list[Card]
@@ -234,7 +130,7 @@ class ExampleBot(AbstractBot):
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
                 continue
-            if current_defence[index]:  # already defended this one
+            if current_defence[index]: # already defended this one
                 continue
             flag: bool = False
             for card in self.sort_cards(hand):
