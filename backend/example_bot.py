@@ -39,6 +39,13 @@ class ExampleBot(AbstractBot):
         kozars = [card for card in self.get_hand() if card[1] == kozar]
         return nonkozars, kozars
 
+    def get_kozars_sorted(self) -> list[tuple[int, int]]:
+        """
+        Returns the kozars in sorted order.
+        """
+        kozars = self.separate_kozars()[1]
+        return sorted(kozars, key=lambda x: x[0])
+
     def first_attack(self) -> list[tuple[int, int]]:
         nonkozars, kozars = self.separate_kozars()
         attack_from = nonkozars
@@ -68,22 +75,34 @@ class ExampleBot(AbstractBot):
                 # forward
                 self.log(f"Forwarding with {forward_list}")
                 return (forward_list, [])
+        return self.defend_with_cards()
+
+    def defend_with_cards(self) -> tuple[list[tuple[int, int]], list[int]]:
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
                 continue
             flag: bool = False
-            for card in self.get_hand():
-                if self.card_order.index(attacking_card) < self.card_order.index(card):
+            for card in sort_cards(self.get_hand()):
+                if card[0] > attacking_card[0] and card[1] == attacking_card[1]:
                     defending_cards.append(card)
                     indexes.append(index)
+                    self.get_hand().remove(card)
                     flag = True
                     break
             # failed to defend
             if not flag:
-                self.log("Taking cards.")
-                return [], []
+                kozars = self.get_kozars_sorted()
+                if self.empty_deck() and kozars:
+                    defending_cards.append(kozars[0])
+                    indexes.append(index)
+                else:
+                    self.log("Taking cards.")
+                    for card in defending_cards:
+                        self.get_hand().append(card)
+                    return [], []
         self.log(f"Defending with {defending_cards}, {indexes}")
         return defending_cards, indexes
+
 
     def notify_burn(self, card_list: list[tuple[int, int]]):
         self.log(f"burn: {card_list}")
