@@ -1,4 +1,3 @@
-from itertools import combinations
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
 
@@ -38,21 +37,18 @@ class ExampleBot(AbstractBot):
             self.possible_cards.discard(item)
 
     def strength(self, card: Card) -> float:
-        return card[0] + (7.0 if card[1] == self.get_kozar_suit() else 0.0)
+        return card[0] + (15.0 if card[1] == self.get_kozar_suit() else 0.0)
 
     def get_average_strength(self) -> float:
-        return sum(self.strength(card) for card in self.possible_cards) / len(
-            self.possible_cards
-        )
+        return 1.0
 
     def evaluate(self, hand: list[Card]) -> float:
-        drawn_cards = (
-            len(hand) if self.empty_deck() else max(0, CARDS_PER_HAND - len(hand))
+        unknown_sum = 0.0
+        if len(hand) < CARDS_PER_HAND:
+            unknown_sum += (CARDS_PER_HAND - len(hand)) * self.get_average_strength()
+        return (sum(self.strength(card) for card in hand) + unknown_sum) / (
+            float(len(hand)) ** 2.0
         )
-        return (
-            sum(self.strength(card) for card in hand)
-            + self.get_average_strength() * drawn_cards
-        ) / (float(len(hand) + drawn_cards) ** 2.0)
 
     def empty_deck(self):
         return self.get_deck_count() == 0
@@ -93,7 +89,7 @@ class ExampleBot(AbstractBot):
         options: List[Card] = self.optional_attack_options(cardlist)
         options.append([])
         best_option: List[Card] = max(
-            options, key=lambda x: list(set(self.get_hand()) - set(x)), default=[]
+            options, key=lambda x: self.evaluate(x), default=[]
         )
         if best_option:
             self.log(f"Joining attack with: {best_option}")
@@ -146,9 +142,8 @@ class ExampleBot(AbstractBot):
 
     def first_attack(self) -> List[Card]:
         options: List[Card] = self.non_empty_subsets(self.get_hand())
-        best_option: List[Card] = max(
-            options, key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))), default=[]
-        )
+        options.sort(key=lambda x: self.evaluate(x), reverse=True)
+        winning_option: List[Card] = options[0]
         self.log(f"Attacking with: {winning_option}")
         return winning_option
 
@@ -182,7 +177,6 @@ class ExampleBot(AbstractBot):
         # if possible to forward
         forward_lists = self.all_possible_forwards()
         defence_list = self.defend_with_cards(self.get_hand())
-        self.log(f"All possible forwards: {forward_lists}")
 
         best_forward = max(
             forward_lists,
@@ -191,26 +185,22 @@ class ExampleBot(AbstractBot):
             ),  # Hand after forward
             default=None,
         )
-
         forward_score = (
             self.evaluate(list(set(self.get_hand()) - set(best_forward)))
             if best_forward
             else -100.0
         )
-        self.log(f"Best forward: {best_forward}; score: {forward_score}")
 
         defence_score = (
             self.evaluate(list(set(self.get_hand()) - set(defence_list[0])))
             if defence_list[0]
             else -100.0
         )
-        self.log(f"Defence: {defence_list}; score: {defence_score}")
 
         attacking_cards = list(
             filter(lambda card: card is not None, self.get_table_attack())
         )
         take_score = self.evaluate(self.get_hand() + attacking_cards)
-        self.log(f"Take score: {take_score}")
 
         max_score = max([take_score, defence_score, forward_score])
         if max_score == take_score:
