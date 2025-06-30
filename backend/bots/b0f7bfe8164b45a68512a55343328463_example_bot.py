@@ -1,5 +1,4 @@
 from abstract_bot import AbstractBot
-from typing import Any, List, Tuple, Dict
 
 
 class ExampleBot(AbstractBot):
@@ -9,8 +8,8 @@ class ExampleBot(AbstractBot):
         self,
         num_of_players: int,
         my_index: int,
-        hand: List[Tuple[int, int]],
-        kozar_card: Tuple[int, int],
+        hand: list,
+        kozar_card: tuple,
         first_player: int,
         lowest_kozar: int,
     ):
@@ -21,7 +20,7 @@ class ExampleBot(AbstractBot):
         # ordering the cards in an increasing order (one of a few possible orders).
         self.card_order = [(i, suit) for suit in ordered_suits for i in range(13)]
 
-    def optional_attack(self) -> List[Tuple[int, int]]:
+    def optional_attack(self):
         for card in self.get_hand():
             for attacking_card in self.get_table_attack():
                 if attacking_card[0] == card[0]:
@@ -30,11 +29,11 @@ class ExampleBot(AbstractBot):
         self.log("Passing on joining attack.")
         return []
 
-    def first_attack(self) -> List[Tuple[int, int]]:
+    def first_attack(self):
         self.log(f"Starting attack with {card[0]}")
         return card[0]
 
-    def defence(self) -> Tuple[List[Tuple[int, int]], List[int]]:
+    def defence(self):
         defending_cards, indexes = [], []
         # if possible to forward
         if all(card is None for card in self.get_table_defence()):
@@ -61,42 +60,33 @@ class ExampleBot(AbstractBot):
         self.log(f"Defending with {defending_cards}, {indexes}")
         return defending_cards, indexes
 
-    def notify_burn(self, card_list: List[Tuple[int, int]]):
+    def notify_burn(self, card_list):
         self.log(f"burn: {card_list}")
 
-    def notify_cards_drawn_to_hand(self, card_list: List[Tuple[int, int]]):
+    def notify_cards_drawn_to_hand(self, card_list):
         self.log(f"cards drawn to hand: {card_list}")
 
-    def notify_winner(self, winner_index: int):
+    def notify_winner(self, winner_index):
         self.log(f"Winner: {winner_index}")
 
-    def notify_pass(self, passer_index: int):
-        self.log(f"Player {passer_index} passed")
+    def notify_pass(self, player_index):
+        self.log(f"Player {player_index} passed")
 
-    def notify_optional_attack(
-        self, attacker_index: int, card_list: List[Tuple[int, int]]
-    ):
-        self.log(f"Player {attacker_index} optional attack with cards: {cards}")
+    def notify_optional_attack(self, player_index, cards):
+        self.log(f"Player {player_index} optional attack with cards: {cards}")
 
-    def notify_first_attack(
-        self, attacker_index: int, card_list: List[Tuple[int, int]]
-    ):
-        self.log(f"Player {attacker_index} first attack with cards: {cards}")
+    def notify_first_attack(self, player_index, cards):
+        self.log(f"Player {player_index} first attack with cards: {cards}")
 
-    def notify_defence(
-        self,
-        defender_index: int,
-        defending_cards: List[Tuple[int, int]],
-        indexes: List[int],
-    ):
+    def notify_defence(self, player_index, defending_cards, indexes):
         self.log(
-            f"Player {defender_index} defended with cards: {defending_cards} at indexes: {indexes}"
+            f"Player {player_index} defended with cards: {defending_cards} at indexes: {indexes}"
         )
 
-    def notify_forward(self, forwarder_index: int, card_list: List[Tuple[int, int]]):
+    def notify_forward(self, forwarder_index, card_list):
         self.log(f"Player {forwarder_index} forwarded with cards: {card_list}")
 
-    def notify_take(self, defender_index: int, card_list: List[Tuple[int, int]]):
+    def notify_take(self, defender_index, card_list):
         self.log(f"Player {defender_index} took cards: {card_list}")
 
 
