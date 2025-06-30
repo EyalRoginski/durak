@@ -27,14 +27,24 @@ class ExampleBot(AbstractBot):
         self.burned_cards: list[Card] = []
         # Mapping player indexes to the cards we know they have.
         self.player_cards: list[list[Card]] = [[] for _ in range(num_of_players)]
+        self.player_cards[my_index] = self.sort_cards(hand)
+        self.possible_cards = {(x, y) for x in range(13) for y in range(4)}
+        self.my_index = my_index
+        self.empty_deck = not (self.get_deck_count() == 0)
+        for item in hand:
+            self.possible_cards.discard(item)
 
     def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
             for attacking_card in self.get_table_attack():
+                self.possible_cards.discard(attacking_card)
                 if not attacking_card:
                     continue
-                if attacking_card[0] == card[0]:
+                if attacking_card[0] == card[0] and (
+                    self.empty_deck or card[1] != self.get_kozar_suit()
+                ):
                     self.log(f"Joining attack with: {card}")
+
                     return [card]
         self.log("Passing on joining attack.")
         return []
