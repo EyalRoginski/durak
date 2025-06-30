@@ -38,8 +38,11 @@ class ExampleBot(AbstractBot):
         return self.get_deck_count() == 0
 
     def optional_attack(self) -> list[Card]:
+        if self.get_table_attack()[-1] != None:
+            return [] # full attack
+        attacking_cards = []
         for card in self.get_hand():
-            for attacking_card in self.get_table_attack():
+            for attacking_card in self.get_table_attack() + self.get_table_defence():
                 if not attacking_card:
                     continue
                 self.possible_cards.discard(attacking_card)
@@ -49,9 +52,9 @@ class ExampleBot(AbstractBot):
                 ):
                     self.log(f"Joining attack with: {card}")
 
-                    return [card]
+                    attacking_cards.append(card)
         self.log("Passing on joining attack.")
-        return []
+        return attacking_cards
 
     def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
@@ -123,8 +126,11 @@ class ExampleBot(AbstractBot):
     def defend_with_cards(self, hand) -> tuple[list[tuple[int, int]], list[int]]:
         defending_cards: list[Card] = []
         indexes: list[int] = []
+        current_defence = self.get_table_defence()
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
+                continue
+            if current_defence[index]: # already defended this one
                 continue
             flag: bool = False
             for card in self.sort_cards(hand):
