@@ -1,5 +1,6 @@
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
+from itertools import combinations
 
 Card = tuple[int, int]
 
@@ -114,21 +115,44 @@ class ExampleBot(AbstractBot):
                 attacking_cards.append(card)
         return attacking_cards
 
+    def non_empty_subsets(self, l: list[Any]) -> list[list[Any]]:
+        result: list[list[Any]] = []
+        for r in range(1, len(l) + 1):
+            result.extend(list(combinations(l, r)))
+        return result
+
+    def all_possible_forwards(self) -> list[list[Card]]:
+        num = [card for card in self.get_table_attack() if card is not None][0][0]
+        forwarding_cards: list[Card] = []
+        for card in self.get_hand():
+            if card[0] == num:
+                forwarding_cards.append(card)
+
+
+
+
+
     def defence(self) -> tuple[list[Card], list[int]]:
         # if possible to forward
+        forward_list = 
         if all(card is None for card in self.get_table_defence()):
             forward_list = self.possible_forward()
-            if forward_list:
-                # forward
-                self.log(f"Forwarding with {forward_list}")
-                return (forward_list, [])
-        return self.defend_with_cards(self.get_hand())
+            # if forward_list:
+            #     # forward
+            #     self.log(f"Forwarding with {forward_list}")
+            #     return (forward_list, [])
 
-    def defend_with_cards(self, hand) -> tuple[list[tuple[int, int]], list[int]]:
+        defence_list = self.defend_with_cards(self.get_hand())
+
+        forward_score = 
+
+    def defend_with_cards(
+        self, hand: list[Card]
+    ) -> tuple[list[tuple[int, int]], list[int]]:
         defending_cards: list[Card] = []
         indexes: list[int] = []
         for index, attacking_card in enumerate(self.get_table_attack()):
-            if attacking_card is None:
+            if attacking_card is None or self.get_table_defence()[index]:
                 continue
             flag: bool = False
             for card in self.sort_cards(hand):
