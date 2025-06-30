@@ -103,19 +103,20 @@ class ExampleBot(AbstractBot):
                 # forward
                 self.log(f"Forwarding with {forward_list}")
                 return (forward_list, [])
-        return self.defend_with_cards()
+        return self.defend_with_cards(self.get_hand())
 
-    def defend_with_cards(self) -> tuple[list[tuple[int, int]], list[int]]:
+    def defend_with_cards(self, hand) -> tuple[list[tuple[int, int]], list[int]]:
         defending_cards: list[Card] = []
         indexes: list[int] = []
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
                 continue
             flag: bool = False
-            for card in self.sort_cards(self.get_hand()):
+            for card in self.sort_cards(hand):
                 if card[0] > attacking_card[0] and card[1] == attacking_card[1]:
                     defending_cards.append(card)
                     indexes.append(index)
+                    hand.remove(card)
                     flag = True
                     break
             # failed to defend
@@ -124,6 +125,7 @@ class ExampleBot(AbstractBot):
                 if self.empty_deck() and kozars:
                     defending_cards.append(kozars[0])
                     indexes.append(index)
+                    hand.remove(kozars[0])
                 else:
                     self.log("Taking cards.")
                     return [], []
