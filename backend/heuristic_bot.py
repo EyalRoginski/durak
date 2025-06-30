@@ -84,6 +84,8 @@ class ExampleBot(AbstractBot):
         return self.non_empty_subsets(options)
 
     def optional_attack(self, cardlist: List[Card]) -> List[Card]:
+        if self.get_table_attack()[-1] != None:
+            return []  # full attack
         options: List[Card] = self.optional_attack_options(cardlist)
         options.append([])
         best_option: List[Card] = max(
