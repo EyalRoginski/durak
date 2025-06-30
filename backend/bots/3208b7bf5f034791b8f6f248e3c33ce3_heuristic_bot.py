@@ -10,10 +10,9 @@ Card = tuple[int, int]
 class ExampleBot(AbstractBot):
     """A bot that plays a trivial strategy."""
 
-    INITIAL_KOZAR_BONUS: float = 30.0
-    END_KOZAR_BONUS: float = 12.0
-    HAND_SIZE_POWER: float = 2.0
-    OVER_MAX_SCORE: float = -5.0
+    KOZAR_BONUS: float = 30.0
+    HAND_SIZE_POWER: float = 10.0
+    OVER_MAX_SCORE: float = -100.0
 
     def game_init(
         self,
@@ -24,7 +23,6 @@ class ExampleBot(AbstractBot):
         first_player: int,
         lowest_kozar: int,
     ):
-        self.initial_deck_size = self.get_deck_count()
         self.log("game_init called")
         ordered_suits = [0, 1, 2, 3]
         ordered_suits[self.get_kozar_suit()] = 3
@@ -46,12 +44,9 @@ class ExampleBot(AbstractBot):
             self.possible_cards.discard(item)
 
     def strength(self, card: Card) -> float:
-        lerp = self.get_deck_count() / self.initial_deck_size
-        kozar_bonus = (
-            lerp * ExampleBot.INITIAL_KOZAR_BONUS
-            + (1 - lerp) * ExampleBot.END_KOZAR_BONUS
+        return card[0] + (
+            ExampleBot.KOZAR_BONUS if card[1] == self.get_kozar_suit() else 0.0
         )
-        return card[0] + (kozar_bonus if card[1] == self.get_kozar_suit() else 0.0)
 
     def get_average_strength(self) -> float:
         return sum(self.strength(card) for card in self.possible_cards) / len(
@@ -73,12 +68,6 @@ class ExampleBot(AbstractBot):
             max(0, len(hand) + drawn_cards - CARDS_PER_HAND) * ExampleBot.OVER_MAX_SCORE
         )
         return score
-
-    def evaluate_attack(self, hand: list[Card]) -> float:
-        score: float = self.evaluate(hand)
-        return score + self.check_forward_circle(
-            hand[0], len([card for card in self.get_hand() if card[0] == hand[0][0]])
-        )
 
     def empty_deck(self):
         return self.get_deck_count() == 0
@@ -173,11 +162,11 @@ class ExampleBot(AbstractBot):
         )
         best_option: List[Card] = max(
             options,
-            key=lambda x: self.evaluate_attack(list(set(self.get_hand()) - set(x))),
+            key=lambda x: self.evaluate(list(set(self.get_hand()) - set(x))),
             default=[],
         )
         scores = [
-            self.evaluate_attack(list(set(self.get_hand()) - set(option)))
+            self.evaluate(list(set(self.get_hand()) - set(option)))
             for option in options
         ]
         self.log(f"Options: {options}, scores: {scores}")
@@ -203,17 +192,13 @@ class ExampleBot(AbstractBot):
         if cards_in_game < self.num_players - 1:
             return 1
         chances = 1
-        for index in range(1, self.num_players):
+        for index in range(1, self.num_players - 1):
             cur_player = (self.my_index + index) % self.num_players
             if (
                 len(
-                    list(
-                        [
-                            card
-                            for card in self.player_cards[cur_player]
-                            if card[0] == card_num
-                        ]
-                    )
+                    card
+                    for card in self.player_cards[cur_player]
+                    if card[0] == card_num
                 )
                 > 0
             ):
@@ -304,35 +289,18 @@ class ExampleBot(AbstractBot):
 
     def enemy_optional_attack(
         self, num_player: int, cards_on_table: set[Card], free_attack_slots: int
-    ) -> List[Card]:
-        options: List[Card] = self.optional_attack_options_inn(
-            self.player_cards[num_player], cards_on_table
-        )
-        return self.pick_opt_attack(options, False, self.player_cards[num_player])
+    ) -> set[Card]:
+        attack_set = {}
 
-    def stimulate_enemy_response(
-        self, cards_on_table: List[Card], free_attack_slots: int = 6
-    ):
-        attacks = set()
-        for index in range(1, self.num_players):
-            cur_player = (self.my_index + index) % self.num_players
-            player_attack = self.enemy_optional_attack(
-                cur_player, cards_on_table, free_attack_slots
-            )
-            if len(player_attack) > free_attack_slots:
-                player_attack = player_attack[:free_attack_slots]
-            attacks += set(player_attack)
-            free_attack_slots -= len(player_attack)
-            if free_attack_slots == 0:
-                break
-        return attacks
+        return attack_set
 
-    def defend_with_cards_inn(
-        self, hand: List[Card], current_defence, table_attack, log: bool
-    ):
+    def defend_with_cards(
+        self, hand: list[Card]
+    ) -> tuple[list[tuple[int, int]], list[int]]:
         defending_cards: list[Card] = []
         indexes: list[int] = []
-        for index, attacking_card in enumerate(table_attack):
+        current_defence = self.get_table_defence()
+        for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
                 continue
             if current_defence[index]:  # already defended this one
@@ -355,19 +323,10 @@ class ExampleBot(AbstractBot):
                     indexes.append(index)
                     hand.remove(kozars[0])
                 else:
-                    if log:
-                        self.log("Taking cards.")
+                    self.log("Taking cards.")
                     return [], []
-        if log:
-            self.log(f"Defending with {defending_cards}, {indexes}")
+        self.log(f"Defending with {defending_cards}, {indexes}")
         return defending_cards, indexes
-
-    def defend_with_cards(
-        self, hand: list[Card]
-    ) -> tuple[list[tuple[int, int]], list[int]]:
-        return self.defend_with_cards_inn(
-            hand, self.get_table_defence(), self.get_table_attack(), True
-        )
 
     def notify_burn(self, card_list: list[Card]):
         self.log(f"burn: {card_list}")

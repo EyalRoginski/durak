@@ -10,8 +10,8 @@ Card = tuple[int, int]
 class ExampleBot(AbstractBot):
     """A bot that plays a trivial strategy."""
 
-    INITIAL_KOZAR_BONUS: float = 30.0
-    END_KOZAR_BONUS: float = 12.0
+    INITIAL_KOZAR_BONUS: float = 20
+    END_KOZAR_BONUS: float = 5.0
     HAND_SIZE_POWER: float = 2.0
     OVER_MAX_SCORE: float = -5.0
 

@@ -10,8 +10,7 @@ Card = tuple[int, int]
 class ExampleBot(AbstractBot):
     """A bot that plays a trivial strategy."""
 
-    INITIAL_KOZAR_BONUS: float = 30.0
-    END_KOZAR_BONUS: float = 12.0
+    KOZAR_BONUS: float = 12.0
     HAND_SIZE_POWER: float = 2.0
     OVER_MAX_SCORE: float = -5.0
 
@@ -24,7 +23,6 @@ class ExampleBot(AbstractBot):
         first_player: int,
         lowest_kozar: int,
     ):
-        self.initial_deck_size = self.get_deck_count()
         self.log("game_init called")
         ordered_suits = [0, 1, 2, 3]
         ordered_suits[self.get_kozar_suit()] = 3
@@ -46,12 +44,9 @@ class ExampleBot(AbstractBot):
             self.possible_cards.discard(item)
 
     def strength(self, card: Card) -> float:
-        lerp = self.get_deck_count() / self.initial_deck_size
-        kozar_bonus = (
-            lerp * ExampleBot.INITIAL_KOZAR_BONUS
-            + (1 - lerp) * ExampleBot.END_KOZAR_BONUS
+        return card[0] + (
+            ExampleBot.KOZAR_BONUS if card[1] == self.get_kozar_suit() else 0.0
         )
-        return card[0] + (kozar_bonus if card[1] == self.get_kozar_suit() else 0.0)
 
     def get_average_strength(self) -> float:
         return sum(self.strength(card) for card in self.possible_cards) / len(
