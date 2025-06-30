@@ -113,7 +113,6 @@ class ExampleBot(AbstractBot):
                 if card[0] > attacking_card[0] and card[1] == attacking_card[1]:
                     defending_cards.append(card)
                     indexes.append(index)
-                    self.get_hand().remove(card)
                     flag = True
                     break
             # failed to defend
@@ -124,8 +123,6 @@ class ExampleBot(AbstractBot):
                     indexes.append(index)
                 else:
                     self.log("Taking cards.")
-                    for card in defending_cards:
-                        self.get_hand().append(card)
                     return [], []
         self.log(f"Defending with {defending_cards}, {indexes}")
         return defending_cards, indexes
