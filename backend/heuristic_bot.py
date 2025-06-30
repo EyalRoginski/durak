@@ -263,14 +263,19 @@ class ExampleBot(AbstractBot):
         defence_list = self.defend_with_cards(self.get_hand())
         self.log(f"All possible forwards: {forward_lists}")
 
-        best_forward = max(
+        """best_forward = max(
             forward_lists,
             key=lambda cards: self.evaluate(
-                list(set(self.get_hand()) - set(cards))
+                list(set(self.get_hand()) - set(cards)) + self.evaluate()
             ),  # Hand after forward
             default=None,
-        )
+        )"""
 
+        best_forward = max(
+            forward_lists,
+            key=self.check_optional_and_defense,  # Hand after forward
+            default=None,
+        )
         forward_score = (
             self.evaluate(list(set(self.get_hand()) - set(best_forward)))
             if best_forward
@@ -367,6 +372,29 @@ class ExampleBot(AbstractBot):
     ) -> tuple[list[tuple[int, int]], list[int]]:
         return self.defend_with_cards_inn(
             hand, self.get_table_defence(), self.get_table_attack(), True
+        )
+
+    def check_optional_and_defense(self, our_defence: List[Card]) -> bool:
+        cards_on_table = set(our_defence + self.get_table_attack())
+        enemy_attack = self.stimulate_enemy_response(
+            cards_on_table, 6 - len(self.get_table_attack)
+        )
+        defending_cards, indices = self.defend_with_cards_inn(
+            list(set(self.get_hand()) - set(our_defence)),
+            [None for _ in range(6)],
+            enemy_attack,
+            False,
+        )
+        if not defending_cards:
+            return self.evaluate(
+                list(
+                    set(self.get_hand())
+                    + set(self.get_table_attack())
+                    + set(enemy_attack)
+                )
+            )
+        return self.evaluate(
+            list(set(self.get_hand()) - set(our_defence) - set(defending_cards))
         )
 
     def notify_burn(self, card_list: list[Card]):
