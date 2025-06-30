@@ -1,4 +1,3 @@
-from itertools import combinations
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
 

@@ -1,4 +1,3 @@
-from itertools import combinations
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
 
@@ -181,7 +180,6 @@ class ExampleBot(AbstractBot):
         # if possible to forward
         forward_lists = self.all_possible_forwards()
         defence_list = self.defend_with_cards(self.get_hand())
-        self.log(f"All possible forwards: {forward_lists}")
 
         best_forward = max(
             forward_lists,
@@ -190,26 +188,22 @@ class ExampleBot(AbstractBot):
             ),  # Hand after forward
             default=None,
         )
-
         forward_score = (
             self.evaluate(list(set(self.get_hand()) - set(best_forward)))
             if best_forward
             else -100.0
         )
-        self.log(f"Best forward: {best_forward}; score: {forward_score}")
 
         defence_score = (
             self.evaluate(list(set(self.get_hand()) - set(defence_list[0])))
             if defence_list[0]
             else -100.0
         )
-        self.log(f"Defence: {defence_list}; score: {defence_score}")
 
         attacking_cards = list(
             filter(lambda card: card is not None, self.get_table_attack())
         )
         take_score = self.evaluate(self.get_hand() + attacking_cards)
-        self.log(f"Take score: {take_score}")
 
         max_score = max([take_score, defence_score, forward_score])
         if max_score == take_score:
