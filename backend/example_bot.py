@@ -30,9 +30,12 @@ class ExampleBot(AbstractBot):
         self.player_cards[my_index] = self.sort_cards(hand)
         self.possible_cards = {(x, y) for x in range(13) for y in range(4)}
         self.my_index = my_index
-        self.empty_deck = not (self.get_deck_count() == 0)
+
         for item in hand:
             self.possible_cards.discard(item)
+
+    def empty_deck(self):
+        return not (self.get_deck_count() == 0)
 
     def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
@@ -41,7 +44,7 @@ class ExampleBot(AbstractBot):
                 if not attacking_card:
                     continue
                 if attacking_card[0] == card[0] and (
-                    self.empty_deck or card[1] != self.get_kozar_suit()
+                    self.empty_deck() or card[1] != self.get_kozar_suit()
                 ):
                     self.log(f"Joining attack with: {card}")
 
