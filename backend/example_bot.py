@@ -35,7 +35,7 @@ class ExampleBot(AbstractBot):
             self.possible_cards.discard(item)
 
     def empty_deck(self):
-        return not (self.get_deck_count() == 0)
+        return self.get_deck_count() == 0
 
     def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
