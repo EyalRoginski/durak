@@ -34,6 +34,12 @@ class ExampleBot(AbstractBot):
         for item in hand:
             self.possible_cards.discard(item)
 
+    def strength(self, card: Card) -> float:
+        return card[0] + (15.0 if card[1] == self.get_kozar_suit() else 0.0)
+
+    def evaluate(self, hand: list[Card]) -> float:
+        return sum(self.strength(card) for card in hand) / (float(len(hand)) ** 2.0)
+
     def empty_deck(self):
         return self.get_deck_count() == 0
 
@@ -43,7 +49,7 @@ class ExampleBot(AbstractBot):
                 if not attacking_card:
                     continue
                 self.possible_cards.discard(attacking_card)
-                
+
                 if attacking_card[0] == card[0] and (
                     self.empty_deck() or card[1] != self.get_kozar_suit()
                 ):
@@ -75,11 +81,9 @@ class ExampleBot(AbstractBot):
         self.log(str(sorted_cards))
         return sorted_cards
 
-
     def group_by_num(self, cardlist: List[Card]) -> List[List[Card]]:
-        values = sorted(set(map(lambda x:x[0], cardlist)))
-        return [[y for y in cardlist if y[0]==x] for x in values]
-
+        values = sorted(set(map(lambda x: x[0], cardlist)))
+        return [[y for y in cardlist if y[0] == x] for x in values]
 
     def first_attack(self) -> List[Card]:
         nonkozars, kozars = self.separate_kozars(self.get_hand())
@@ -91,12 +95,12 @@ class ExampleBot(AbstractBot):
 
         grouped = [g for g in self.group_by_num(sorted_cards) if len(g) > 1]
         self.log(str(grouped))
-        if attacking_card_num >= 3 and grouped and grouped[0][0][0] <= 8: # no card below 5 and duplicate at most 10
+        if (
+            attacking_card_num >= 3 and grouped and grouped[0][0][0] <= 8
+        ):  # no card below 5 and duplicate at most 10
             return grouped[0]
 
         return [card for card in sorted_cards if card[0] == attacking_card_num]
-        
-
 
     def possible_forward(self) -> list[Card]:
         """
