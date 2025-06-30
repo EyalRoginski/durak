@@ -31,18 +31,26 @@ class ExampleBot(AbstractBot):
         return []
 
 
-    def separate_kozars(self):
+    def separate_kozars(self, cardlist: List[Tuple[int, int]]) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
         """
         returns list of non-kozars, list of kozars
         """
         kozar = self.get_kozar_suit()
-        nonkozars = [card for card in self.get_hand() if card[1] != kozar]
-        kozars = [card for card in self.get_hand() if card[1] == kozar]
+        nonkozars = [card for card in cardlist if card[1] != kozar]
+        kozars = [card for card in cardlist if card[1] == kozar]
         return nonkozars, kozars
 
 
+    def sort_cards(self, cardlist: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+        nonkozars, kozars = self.separate_kozars(cardlist)
+        sorted_cards = sorted(nonkozars) + sorted(kozars)
+        self.log(str(sorted_cards))
+        return sorted_cards
+
+
     def first_attack(self) -> List[Tuple[int, int]]:
-        nonkozars, kozars = self.separate_kozars()
+        print(self.sort_cards(self.get_hand()))
+        nonkozars, kozars = self.separate_kozars(self.get_hand())
         attack_from = nonkozars
         if not attack_from:
             attack_from = kozars
