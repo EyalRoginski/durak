@@ -1,6 +1,8 @@
 from abstract_bot import AbstractBot
 from typing import Any, List, Tuple, Dict
 
+Card = tuple[int, int]
+
 
 class ExampleBot(AbstractBot):
     """A bot that plays a trivial strategy."""
@@ -9,8 +11,8 @@ class ExampleBot(AbstractBot):
         self,
         num_of_players: int,
         my_index: int,
-        hand: List[Tuple[int, int]],
-        kozar_card: Tuple[int, int],
+        hand: list[Card],
+        kozar_card: Card,
         first_player: int,
         lowest_kozar: int,
     ):
@@ -21,9 +23,11 @@ class ExampleBot(AbstractBot):
         # ordering the cards in an increasing order (one of a few possible orders).
         self.card_order = [(i, suit) for suit in ordered_suits for i in range(13)]
 
-    def optional_attack(self) -> List[Tuple[int, int]]:
+    def optional_attack(self) -> list[Card]:
         for card in self.get_hand():
             for attacking_card in self.get_table_attack():
+                if not attacking_card:
+                    continue
                 if attacking_card[0] == card[0]:
                     self.log(f"Joining attack with: {card}")
                     return [card]
@@ -31,7 +35,7 @@ class ExampleBot(AbstractBot):
         return []
 
 
-    def separate_kozars(self, cardlist: List[Tuple[int, int]]) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
+    def separate_kozars(self, cardlist: List[Card]) -> Tuple[List[Card], List[Card]]:
         """
         returns list of non-kozars, list of kozars
         """
@@ -41,34 +45,57 @@ class ExampleBot(AbstractBot):
         return nonkozars, kozars
 
 
-    def sort_cards(self, cardlist: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    def sort_cards(self, cardlist: List[Card]) -> List[Card]:
         nonkozars, kozars = self.separate_kozars(cardlist)
         sorted_cards = sorted(nonkozars) + sorted(kozars)
         self.log(str(sorted_cards))
         return sorted_cards
 
 
-    def first_attack(self) -> List[Tuple[int, int]]:
-        print(self.sort_cards(self.get_hand()))
+    def group_by_num(self, cardlist: List[Card]) -> List[List[Card]]:
+        values = sorted(set(map(lambda x:x[0], cardlist)))
+        return [[y for y in cardlist if y[0]==x] for x in values]
+
+
+    def first_attack(self) -> List[Card]:
         nonkozars, kozars = self.separate_kozars(self.get_hand())
         attack_from = nonkozars
         if not attack_from:
             attack_from = kozars
         sorted_cards = sorted(attack_from)
         attacking_card_num = sorted_cards[0][0]
+
+        grouped = [g for g in self.group_by_num(sorted_cards) if len(g) > 1]
+        self.log(str(grouped))
+        if attacking_card_num >= 3 and grouped and grouped[0][0][0] <= 8: # no card below 5 and duplicate at most 10
+            return grouped[0]
+
         return [card for card in sorted_cards if card[0] == attacking_card_num]
+        
 
 
-    def defence(self) -> Tuple[List[Tuple[int, int]], List[int]]:
-        defending_cards, indexes = [], []
+    def possible_forward(self) -> list[Card]:
+        """
+        If we can forward without a kozar, return the list representing the
+        cards we forward with (currently just one)
+        """
+        num = [card for card in self.get_table_attack() if card is not None][0][0]
+        attacking_cards = []
+        for card in self.get_hand():
+            if card[0] == num and card[1] != self.get_kozar_suit():
+                attacking_cards.append(card)
+        return attacking_cards
+
+    def defence(self) -> tuple[list[Card], list[int]]:
+        defending_cards: list[Card] = []
+        indexes: list[int] = []
         # if possible to forward
         if all(card is None for card in self.get_table_defence()):
-            num = [card for card in self.get_table_attack() if card is not None][0][0]
-            for card in self.get_hand():
-                if card[0] == num:
-                    # forward
-                    self.log(f"Forwarding {card}")
-                    return [card], []
+            forward_list = self.possible_forward()
+            if forward_list:
+                # forward
+                self.log(f"Forwarding with {forward_list}")
+                return (forward_list, [])
         for index, attacking_card in enumerate(self.get_table_attack()):
             if attacking_card is None:
                 continue
@@ -86,10 +113,10 @@ class ExampleBot(AbstractBot):
         self.log(f"Defending with {defending_cards}, {indexes}")
         return defending_cards, indexes
 
-    def notify_burn(self, card_list: List[Tuple[int, int]]):
+    def notify_burn(self, card_list: list[Card]):
         self.log(f"burn: {card_list}")
 
-    def notify_cards_drawn_to_hand(self, card_list: List[Tuple[int, int]]):
+    def notify_cards_drawn_to_hand(self, card_list: list[Card]):
         self.log(f"cards drawn to hand: {card_list}")
 
     def notify_winner(self, winner_index: int):
@@ -98,30 +125,26 @@ class ExampleBot(AbstractBot):
     def notify_pass(self, passer_index: int):
         self.log(f"Player {passer_index} passed")
 
-    def notify_optional_attack(
-        self, attacker_index: int, card_list: List[Tuple[int, int]]
-    ):
-        self.log(f"Player {attacker_index} optional attack with cards: {cards}")
+    def notify_optional_attack(self, attacker_index: int, card_list: list[Card]):
+        self.log(f"Player {attacker_index} optional attack with cards: {card_list}")
 
-    def notify_first_attack(
-        self, attacker_index: int, card_list: List[Tuple[int, int]]
-    ):
-        self.log(f"Player {attacker_index} first attack with cards: {cards}")
+    def notify_first_attack(self, attacker_index: int, card_list: list[Card]):
+        self.log(f"Player {attacker_index} first attack with cards: {card_list}")
 
     def notify_defence(
         self,
         defender_index: int,
-        defending_cards: List[Tuple[int, int]],
-        indexes: List[int],
+        defending_cards: list[Card],
+        indexes: list[int],
     ):
         self.log(
             f"Player {defender_index} defended with cards: {defending_cards} at indexes: {indexes}"
         )
 
-    def notify_forward(self, forwarder_index: int, card_list: List[Tuple[int, int]]):
+    def notify_forward(self, forwarder_index: int, card_list: list[Card]):
         self.log(f"Player {forwarder_index} forwarded with cards: {card_list}")
 
-    def notify_take(self, defender_index: int, card_list: List[Tuple[int, int]]):
+    def notify_take(self, defender_index: int, card_list: list[Card]):
         self.log(f"Player {defender_index} took cards: {card_list}")
 
 
